@@ -4,8 +4,8 @@ DEPTH = 4; //23
 MAX_WIDTH = 85;
 MIN_WIDTH = 80;
 
-BASE_WIDTH = 71.5;
-BASE_HEIGHT = 39.5;
+BASE_WIDTH = 74; //71.5
+BASE_HEIGHT = 44; //39.5
 
 CUT_IN = 2.5;
 CUT_IN_HEIGHT = 22.5;
@@ -16,25 +16,76 @@ MARGIH_V = 7;
 
 BAT_HEIGHT = 42.50;
 BAT_WIDTH = 78.50;
-BAT_DEPTH = 40; // ??
+BAT_DEPTH = 5; // ??
 
 CORNERS_CURVE = 5;
+
+//USB MICRO
+USB_MICRO_WIDTH = 3; 
+USB_MICRO_HEIGHT = 6;
+USB_MICRO_DEPTH = 3;
+
+//USB STANDARD
+USB_STANDARD_WIDTH = 5; 
+USB_STANDARD_HEIGHT = 10;
+USB_STANDARD_DEPTH = 5;
 
 //Inkscape scale
 SCALE = 3.58;
 
-//bottom();
-//translate([0,0,10])
+EXPLODE = 0;
 
-lantian_battery();
+DEBUG = false;
+
+bottom();
+
+//translate([0,0,20])
+//top();
 
 module bottom(){
-    scale()
-    color("white")
+    bottom_layer = 1;
+    battery_support_layer = 10;
+    
+    if(bottom_layer>0){
+        color("white")
+        translate([0,0,bottom_layer/2])
+        main_shape(bottom_layer);
+    }
+    
+    if(battery_support_layer>0){    
+        color("grey")
+        translate([0,0,bottom_layer + battery_support_layer/2 + EXPLODE])
+        lantian_battery_support_layer(battery_support_layer);
+           
+        // This can to be commented out once we have all the shapes
+        if(DEBUG){
+            color("blue")
+            translate([0,0,10 + EXPLODE*2])    
+            union(){
+                rotate([180,0,0])
+                scale([SCALE,SCALE,1])
+                inkscape_battery();
+            }     
+        }   
+    }
+}
+
+module top(){
+    top_layer = 2;
+    
+    if(top_layer>0){
+        color("white")
+        translate([0,0,top_layer/2])
+        main_shape(top_layer);
+    } 
+}
+
+module main_shape(depth){
+    // This is the main shape of the case
     difference(){
         hull(){
-            rounded_corners(BASE_WIDTH, MAX_HEIGHT, DEPTH/2, CORNERS_CURVE);
-            rounded_corners(MAX_WIDTH, BASE_HEIGHT, DEPTH/2, CORNERS_CURVE);
+            rounded_corners(BASE_WIDTH, MAX_HEIGHT, depth, CORNERS_CURVE);
+            rounded_corners(MAX_WIDTH, BASE_HEIGHT, depth, CORNERS_CURVE);
         }
         
         translate([MAX_WIDTH/2,0,0])
@@ -43,20 +94,45 @@ module bottom(){
         translate([-MAX_WIDTH/2,0,0])
         cut_in();        
     
-    }
+    }    
 }
 
 module cut_in(){
-    cube([CUT_IN*2, CUT_IN_HEIGHT, DEPTH*2], true);
+    cube([CUT_IN*2, CUT_IN_HEIGHT, DEPTH*4], true);
 }
 
 
-module lantian_battery(){
-    cube([BAT_WIDTH, BAT_HEIGHT, 1], true);
+module lantian_battery_support_layer(depth){
+    difference(){
+        main_shape(depth);
+        cube([BAT_WIDTH, BAT_HEIGHT, depth*2], true);
+        
+        //Slot for micro USB
+        translate([(BAT_WIDTH-USB_MICRO_WIDTH)/2,0,-(depth-USB_MICRO_DEPTH)/2])
+        usb_micro();        
+        
+        //Slot for standard USB
+        translate([-(BAT_WIDTH-USB_STANDARD_WIDTH)/2,0,-(depth-USB_STANDARD_DEPTH)/2])
+        usb_standard();           
+    }                 
+}
+
+module usb_micro(){
+    //USB MICRO PORT
+    cube([USB_MICRO_WIDTH, USB_MICRO_HEIGHT, USB_MICRO_DEPTH], true);
     
-    scale([SCALE,SCALE,1])
-    color("blue")
-    inkscape_battery();
+    //TUNNEL FOR MICRO PORT
+    translate([USB_MICRO_WIDTH, 0, 0])
+    cube([USB_MICRO_WIDTH, USB_MICRO_HEIGHT, USB_MICRO_DEPTH], true);    
+}
+
+module usb_standard(){
+    //USB STANDARD PORT
+    cube([USB_STANDARD_WIDTH, USB_STANDARD_HEIGHT, USB_STANDARD_DEPTH], true);
+    
+    //TUNNEL FOR STANDARD PORT
+    translate([-USB_STANDARD_WIDTH, 0, 0])
+    cube([USB_STANDARD_WIDTH, USB_STANDARD_HEIGHT, USB_STANDARD_DEPTH], true);
 }
 
 // Should be extracted to a LIB or sth
