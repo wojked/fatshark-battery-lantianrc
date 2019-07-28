@@ -1,16 +1,16 @@
 $fn = 128;
 
 DEPTH = 4; //23
-MAX_WIDTH = 85;
+MAX_WIDTH = 85.5; //85
 MIN_WIDTH = 80;
 
-BASE_WIDTH = 74; //71.5
-BASE_HEIGHT = 44; //39.5
+BASE_WIDTH = 75; //71.5
+BASE_HEIGHT = 44.5; //39.5
 
 CUT_IN = 2.5;
 CUT_IN_HEIGHT = 22.5;
 
-MAX_HEIGHT = 47;
+MAX_HEIGHT = 47.5; //47
 MARGIN_H = 12;
 MARGIH_V = 7;
 
@@ -30,12 +30,12 @@ CORNERS_CURVE = 5;
 
 //USB MICRO, TODO: add real numbers
 USB_MICRO_WIDTH = 5.8; 
-USB_MICRO_HEIGHT = 8;
+USB_MICRO_HEIGHT = 8.5; //8
 USB_MICRO_DEPTH = 2.55;
 
 //USB STANDARD, TODO: add real numbers
 USB_STANDARD_WIDTH = 10; 
-USB_STANDARD_HEIGHT = 14.9;
+USB_STANDARD_HEIGHT = 15.5; //14.9
 USB_STANDARD_DEPTH = 7.22;
 
 //BATTERY CHECK
@@ -49,32 +49,24 @@ SCALE = 3.58;
 
 EXPLODE = 0;
 
-DEBUG = true;
+DEBUG = false;
+DEBUG_HINT = false;
 
-//bottom();
+bottom();
 //translate([0,0,20])
 //top();
 
-battery();
-
 
 module bottom(){
-    bottom_layer = 0;
     battery_support_layer = 10;
-    
-    if(bottom_layer>0){
-        color("white")
-        translate([0,0,bottom_layer/2])
-        main_shape(bottom_layer);
-    }
     
     if(battery_support_layer>0){    
         color("grey")
-        translate([0,0,bottom_layer + battery_support_layer/2 + EXPLODE])
+        translate([0,0,battery_support_layer/2])
         lantian_battery_support_layer(battery_support_layer);
            
         // This can to be commented out once we have all the shapes
-        if(DEBUG){
+        if(DEBUG_HINT){
             color("blue")
             translate([0,0,10 + EXPLODE*2])    
             union(){
@@ -126,7 +118,7 @@ module battery(){
         battery_basket();
         
         color("red")
-        battery_pcb(0);
+        battery_pcb(10,PCB_DEPTH+10);
         
         color("white")
         translate([0,0,-PCB_DEPTH/2])        
@@ -138,7 +130,7 @@ module battery_basket(){
     cube([BATTERY_BASKET_WIDTH, BATTERY_BASKET_HEIGHT, BATTERY_BASKET_DEPTH], true);        
 }
 
-module battery_pcb(hull_size){
+module battery_pcb(hull_size, hull_size_down){
     hull(){
         cube([PCB_WIDTH, PCB_HEIGHT, PCB_DEPTH], true);    
         
@@ -146,6 +138,11 @@ module battery_pcb(hull_size){
             translate([0, 0, hull_size-PCB_DEPTH])                
             cube([PCB_WIDTH, PCB_HEIGHT, PCB_DEPTH], true);    
         }
+        
+        if(hull_size_down>PCB_DEPTH){                
+            translate([0, 0, PCB_DEPTH-hull_size_down])                
+            cube([PCB_WIDTH, PCB_HEIGHT, PCB_DEPTH], true);    
+        }        
     }
 }
 
@@ -173,12 +170,11 @@ module battery_pcb_components(){
 module lantian_battery_support_layer(depth){
     difference(){
         main_shape(depth);
-        
         battery();
     }    
     
     if(DEBUG){
-        battery_pcb_components();    
+        battery();
     }
 }
 
