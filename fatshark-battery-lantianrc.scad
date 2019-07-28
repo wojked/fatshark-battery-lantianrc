@@ -14,36 +14,48 @@ MAX_HEIGHT = 47;
 MARGIN_H = 12;
 MARGIH_V = 7;
 
-BAT_HEIGHT = 42.50;
+BAT_HEIGHT = 42.00;
 BAT_WIDTH = 78.50;
 BAT_DEPTH = 5; // ??
+
+PCB_HEIGHT = 42.50; //42.00
+PCB_WIDTH = 79.0;  //78.50
+PCB_DEPTH = 1.55;   //1.55
 
 CORNERS_CURVE = 5;
 
 //USB MICRO, TODO: add real numbers
-USB_MICRO_WIDTH = 3; 
-USB_MICRO_HEIGHT = 6;
-USB_MICRO_DEPTH = 3;
+USB_MICRO_WIDTH = 5.8; 
+USB_MICRO_HEIGHT = 8;
+USB_MICRO_DEPTH = 2.55;
 
 //USB STANDARD, TODO: add real numbers
-USB_STANDARD_WIDTH = 5; 
-USB_STANDARD_HEIGHT = 10;
-USB_STANDARD_DEPTH = 5;
+USB_STANDARD_WIDTH = 10; 
+USB_STANDARD_HEIGHT = 14.9;
+USB_STANDARD_DEPTH = 7.22;
+
+//BATTERY CHECK
+BATTERY_CHECK_WIDTH = 5; // 4.6
+BATTERY_CHECK_HEIGHT = 5.08;
+BATTERY_CHECK_DEPTH = 6.20;
+BATTERY_CHECK_OFFSET = 13.85; //13.85
 
 //Inkscape scale
 SCALE = 3.58;
 
 EXPLODE = 0;
 
-DEBUG = false;
+DEBUG = true;
 
 bottom();
-
 //translate([0,0,20])
 //top();
 
+battery();
+
+
 module bottom(){
-    bottom_layer = 1;
+    bottom_layer = 0;
     battery_support_layer = 10;
     
     if(bottom_layer>0){
@@ -101,38 +113,115 @@ module cut_in(){
     cube([CUT_IN*2, CUT_IN_HEIGHT, DEPTH*4], true);
 }
 
+module battery(){
+    translate([0,0,PCB_DEPTH/2])
+    union(){        
+        battery_pcb(PCB_DEPTH);
+        translate([0,0,-PCB_DEPTH/2])        
+        battery_pcb_components(PCB_DEPTH);    
+    }
+}
+
+module battery_pcb(){
+    cube([PCB_WIDTH, PCB_HEIGHT, PCB_DEPTH], true);    
+}
+
+module battery_pcb_components(depth){
+    union(){
+        //Slot for micro USB
+        translate([(BAT_WIDTH-USB_MICRO_WIDTH)/2,0,-USB_MICRO_DEPTH/2])
+        usb_micro();        
+        
+        //Slot for standard USB
+        translate([-(BAT_WIDTH-USB_STANDARD_WIDTH)/2,0,-USB_STANDARD_DEPTH/2])
+        usb_standard();           
+        
+        //Slot for the button
+        translate([
+            (BAT_WIDTH-BATTERY_CHECK_WIDTH)/2 - BATTERY_CHECK_OFFSET,
+            -(BAT_HEIGHT-BATTERY_CHECK_HEIGHT)/2,
+            -BATTERY_CHECK_DEPTH/2
+        ])
+        battery_check();          
+    }
+}
 
 module lantian_battery_support_layer(depth){
     difference(){
         main_shape(depth);
-        cube([BAT_WIDTH, BAT_HEIGHT, depth*2], true);
         
-        //Slot for micro USB
-        translate([(BAT_WIDTH-USB_MICRO_WIDTH)/2,0,-(depth-USB_MICRO_DEPTH)/2])
-        usb_micro();        
-        
-        //Slot for standard USB
-        translate([-(BAT_WIDTH-USB_STANDARD_WIDTH)/2,0,-(depth-USB_STANDARD_DEPTH)/2])
-        usb_standard();           
-    }                 
+        battery();
+    }    
+    
+    if(DEBUG){
+        battery_pcb_components();    
+    }
 }
 
 module usb_micro(){
-    //USB MICRO PORT
-    cube([USB_MICRO_WIDTH, USB_MICRO_HEIGHT, USB_MICRO_DEPTH], true);
+    hull_size = 10;
     
-    //TUNNEL FOR MICRO PORT
-    translate([USB_MICRO_WIDTH, 0, 0])
-    cube([USB_MICRO_WIDTH, USB_MICRO_HEIGHT, USB_MICRO_DEPTH], true);    
+    hull(){        
+        //USB MICRO PORT
+        cube([USB_MICRO_WIDTH, USB_MICRO_HEIGHT, USB_MICRO_DEPTH], true);
+        
+        //TUNNEL FOR MICRO PORT
+        translate([USB_MICRO_WIDTH, 0, 0])
+        cube([USB_MICRO_WIDTH, USB_MICRO_HEIGHT, USB_MICRO_DEPTH], true);    
+        
+        
+        //lower part
+        //USB MICRO PORT
+        translate([0, 0, USB_MICRO_DEPTH-hull_size])        
+        cube([USB_MICRO_WIDTH, USB_MICRO_HEIGHT, USB_MICRO_DEPTH], true);        
+        
+        //TUNNEL FOR MICRO PORT        
+        translate([USB_MICRO_WIDTH, 0, USB_MICRO_DEPTH-hull_size])
+        cube([USB_MICRO_WIDTH, USB_MICRO_HEIGHT, USB_MICRO_DEPTH], true);         
+    }
+    
 }
 
 module usb_standard(){
-    //USB STANDARD PORT
-    cube([USB_STANDARD_WIDTH, USB_STANDARD_HEIGHT, USB_STANDARD_DEPTH], true);
+    hull_size = 10;
     
-    //TUNNEL FOR STANDARD PORT
-    translate([-USB_STANDARD_WIDTH, 0, 0])
-    cube([USB_STANDARD_WIDTH, USB_STANDARD_HEIGHT, USB_STANDARD_DEPTH], true);
+    hull(){
+        //USB STANDARD PORT
+        cube([USB_STANDARD_WIDTH, USB_STANDARD_HEIGHT, USB_STANDARD_DEPTH], true);
+        
+        //TUNNEL FOR STANDARD PORT
+        translate([-USB_STANDARD_WIDTH, 0, 0])
+        cube([USB_STANDARD_WIDTH, USB_STANDARD_HEIGHT, USB_STANDARD_DEPTH], true);
+        
+        //USB STANDARD PORT
+        translate([0, 0, USB_STANDARD_DEPTH-hull_size])        
+        cube([USB_STANDARD_WIDTH, USB_STANDARD_HEIGHT, USB_STANDARD_DEPTH], true);
+        
+        //TUNNEL FOR STANDARD PORT
+        translate([-USB_STANDARD_WIDTH, 0, USB_STANDARD_DEPTH-hull_size])
+        cube([USB_STANDARD_WIDTH, USB_STANDARD_HEIGHT, USB_STANDARD_DEPTH], true);        
+    }
+}
+
+module battery_check(){
+    hull_size = 10;
+    
+    hull(){
+        //BATTERY CHECK BUTTON
+        cube([BATTERY_CHECK_WIDTH, BATTERY_CHECK_HEIGHT, BATTERY_CHECK_DEPTH], true);
+        
+        //TUNNEL FOR BUTTON
+        translate([0, -BATTERY_CHECK_HEIGHT, 0])
+        cube([BATTERY_CHECK_WIDTH, BATTERY_CHECK_HEIGHT, BATTERY_CHECK_DEPTH], true);
+        
+        //BATTERY CHECK BUTTON
+        translate([0, 0, BATTERY_CHECK_DEPTH-hull_size])        
+        cube([BATTERY_CHECK_WIDTH, BATTERY_CHECK_HEIGHT, BATTERY_CHECK_DEPTH], true);
+        
+        //TUNNEL FOR BUTTON
+        translate([0, -BATTERY_CHECK_HEIGHT, BATTERY_CHECK_DEPTH-hull_size])
+        cube([BATTERY_CHECK_WIDTH, BATTERY_CHECK_HEIGHT, BATTERY_CHECK_DEPTH], true);        
+    }
 }
 
 // Should be extracted to a LIB or sth
